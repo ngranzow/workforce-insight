@@ -517,4 +517,44 @@ delEmp = () => {
     });
 }
 
-viewBud = () => {}
+viewBud = () => {
+    const departments = [];
+
+    db.query("SELECT * FROM department", (err, res) => {
+        if (err) throw err;
+    
+        res.forEach(({ name, id }) => {
+            departments.push(
+                {
+                    name: name,
+                    value: id
+                }
+            );
+        });
+    });
+
+    inquier.prompt([
+        {
+            type: 'list',
+            name: 'depId',
+            message: 'Which department\'s budget would you like to see?',
+            choices: departments
+        }
+    ])
+    .then(budAns => {
+        const query = `SELECT department.name, SUM(salary) AS budget FROM
+                        employee LEFT JOIN role
+                        ON employee.role_id = role.id
+                        LEFT JOIN department
+                        ON role.department_id = department.id
+                        WHERE department.id = ?`;
+        db.query(query, [budAns.id], (err, res) => {
+            if (err) throw err;
+                console.table(res);
+            mainMenu();
+        });
+    })
+    .catch(err => {
+        console.error(err);
+    });
+};
