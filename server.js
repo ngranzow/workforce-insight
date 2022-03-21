@@ -35,13 +35,13 @@ const mainMenu = () => {
     .then((menuAnswers) => {
         switch (menuAnswers.menu) {
             case 'View all departments':
-                viewDep();
+                viewAll('EMPLOYEE');
                 break;
             case 'View all roles':
-                vewRol();
+                viewAll('ROLE');
                 break;
             case 'View all employees':
-                viewEmp();
+                viewAll('EMPLOYEE');
                 break;
             case 'Add a department':
                 addDep();
@@ -76,5 +76,9 @@ const mainMenu = () => {
             case 'Do nothing':
                 db.end()
         };
+    })
+    .catch(err => {
+        console.error(err);
     });
 };
+
