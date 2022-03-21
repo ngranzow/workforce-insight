@@ -139,16 +139,16 @@ addDep = () => {
 };
 
 addRol = () => {
-    const departments = []
+    const roles = []
     db.query('SELECT * FROM department', (err, res) => {
         if (err) throw err;
 
-        res.forEach(dep => {
-            let depObj = {
-                name: dep.name,
-                value: dep.id
+        res.forEach(rol => {
+            let rolObj = {
+                name: rol.name,
+                value: rol.id
             }
-            departments.push(depObj);
+            roles.push(rolObj);
         })
     })
 
@@ -169,9 +169,9 @@ addRol = () => {
         {
             type: 'input', 
             name: 'newSalary',
-            message: "What is the salary of the new role?",
+            message: 'What is the salary of the new role?',
             validate: newSalary => {
-                if (!isNaN()) {
+                if (!isNaN(newSalary)) {
                     console.log(' Please enter the salary.');
                     return false;
                 } else {
@@ -180,14 +180,14 @@ addRol = () => {
             }
         },
         {
-            type: "list",
-            name: "departments",
-            choices: departments,
-            message: "which department is this role in?"
+            type: 'list',
+            name: 'roles',
+            choices: roles,
+            message: 'Which department is this role in?'
         }
     ])
     .then(rolAnswer => {
-        const params = [rolAnswer.newRole, rolAnswer.newSalary, rolAnswer.departments];
+        const params = [rolAnswer.newRole, rolAnswer.newSalary, rolAnswer.roles];
         const sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
         db.query(sql, params, (err, res) => {
             if (err) throw err;
@@ -207,7 +207,7 @@ addEmp = () => {
         }
     ];
 
-    db.query("SELECT * FROM role", (err, res) => {
+    db.query('SELECT * FROM role', (err, res) => {
         if (err) throw err;
         
         res.forEach(({ title, id }) => {
@@ -218,7 +218,7 @@ addEmp = () => {
         });
     });
 
-    db.query("SELECT * FROM employee", (err, res) => {
+    db.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
         
         res.forEach(({ first_name, last_name, id }) => {
@@ -233,7 +233,7 @@ addEmp = () => {
         {
             type: 'input',
             name: 'firstName',
-            message: "What is the new employee's first name?",
+            message: 'What is the new employee\'s first name?',
             validate: firstName => {
               if (firstName) {
                   return true;
@@ -246,7 +246,7 @@ addEmp = () => {
         {
             type: 'input',
             name: 'lastName',
-            message: "What is the new employee's last name?",
+            message: 'What is the new employee\'s last name?',
             validate: lastName => {
               if (lastName) {
                   return true;
@@ -257,16 +257,16 @@ addEmp = () => {
             }
         },
         {
-            type: "list",
-            name: "roleId",
+            type: 'list',
+            name: 'roleId',
+            message: 'What is the new employee\'s role?',
             choices: roles,
-            message: "What is the new employee's role?"
         },
         {
-            type: "list",
-            name: "managerId",
+            type: 'list',
+            name: 'managerId',
+            message: 'Who is the new employee\'s manager?',
             choices: employees,
-            message: "Who is the new employee's manager?"
         }
     ])
     .then(empAnswer => {
@@ -282,15 +282,239 @@ addEmp = () => {
 };
 
 upEmp = () => {
+    const employees = [];
+    const roles = [];
 
+    db.query('SELECT * FROM employee', (err, res) => {
+        if (err) throw err;
+        
+        res.forEach(({ first_name, last_name, id }) => {
+            employees.push({
+                name: first_name + " " + last_name,
+                value: id
+            });
+        });
+    });
+    
+    db.query('SELECT * FROM role', (err, res) => {
+        if (err) throw err;
+        
+        res.forEach(({ title, id }) => {
+            roles.push({
+                name: title,
+                value: id
+            });
+        });
+    });
+
+    inquier.prompt([
+        {
+          type: 'list',
+          name: 'id',
+          message: 'Whose role would you like to update?',
+          choices: employees
+        },
+        {
+          type: 'list',
+          name: 'role_id',
+          message: 'What is the employee\'s new role?',
+          choices: roles
+        }
+    ])
+    .then(upRoleAns => {
+        const params = [upRoleAns.role_id, upRoleAns.id]
+        const sql = `UPDATE employee SET role_id = '?'  WHERE 'id' = '?'`;
+
+        db.query(sql, params, (err, res) => {
+            if (err) throw err;
+            console.log(`Updated employee\'s role!`)
+
+            viewAll('EMPLOYEE');
+        })
+    })
+    .catch(err => {
+        console.error(err);
+    });
 }
 
-upMan = () => {}
+upMan = () => {
+    const employees = [];
+    const manager = [
+        {
+            name: 'None',
+            value: null
+        }
+    ];
 
-viewEByD = () => {}
+    db.query('SELECT * FROM employee', (err, res) => {
+        if (err) throw err;
+        
+        res.forEach(({ first_name, last_name, id }) => {
+            employees.push({
+                name: first_name + " " + last_name,
+                value: id
+            });
+        });
 
-delDep = () => {}
+        res.forEach(({ first_name, last_name, id }) => {
+            manager.push({
+                name: first_name + " " + last_name,
+                value: id
+            });
+        });
+    });
 
-delRol = () => {}
+    inquier.prompt([
+        {
+          type: 'list',
+          name: 'empId',
+          message: 'Whose manager would you like to update?',
+          choices: employees
+        },
+        {
+          type: 'list',
+          name: 'manId',
+          message: 'Who is the employee\'s new manager?',
+          choices: manager
+        }
+    ])
+    .then(upRoleAns => {
+        const params = [upRoleAns.manId, upRoleAns.empId]
+        const sql = `UPDATE employee SET manager_id = '?'  WHERE 'id' = '?'`;
+
+        db.query(sql, params, (err, res) => {
+            if (err) throw err;
+            console.log(`Updated employee\'s role!`)
+
+            viewAll('EMPLOYEE');
+        })
+    })
+    .catch(err => {
+        console.error(err);
+    });
+}
+
+viewEByD = () => {
+    const sql = `SELECT employee.first_name, 
+                    employee.last_name, 
+                    department.name AS department
+                FROM employee 
+                LEFT JOIN role ON employee.role_id = role.id 
+                LEFT JOIN department ON role.department_id = department.id`;
+
+    db.query(sql, (err, rows) => {
+        if (err) throw err; 
+        console.table(rows); 
+        mainMenu();
+    });          
+}
+
+delDep = () => {
+    const departments = [];
+
+    db.query('SELECT * FROM department', (err, res) => {
+        if (err) throw err;
+
+        res.forEach(dep => {
+            let depObj = {
+                name: dep.name,
+                value: dep.id
+            }
+            departments.push(depObj);
+        })
+    });
+
+    inquier.prompt([
+        {
+            type: 'list',
+            name: 'depId',
+            message: 'Which department would you like to delete?',
+            choices: departments
+        }
+    ])
+    .then(delDepAns => {
+        const sql = `DELETE FROM department WHERE id = ?`;
+        db.query(sql, [delDepAns.depId], (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} row(s) successfully deleted!`);
+            mainMenu();
+        });
+    })
+    .catch(err => {
+        console.error(err);
+    });
+}
+
+delRol = () => {
+    const roles = [];
+
+    db.query('SELECT * FROM role', (err, res) => {
+        if (err) throw err;
+
+        res.forEach(({ title, id }) => {
+            let rolObj = {
+                name: title,
+                value: id
+            }
+            roles.push(rolObj);
+        })
+    });
+
+    inquier.prompt([
+        {
+            type: 'list',
+            name: 'rolId',
+            message: 'Which role would you like to delete?',
+            choices: roles
+        }
+    ])
+    .then(delRolAns => {
+        const sql = `DELETE FROM role WHERE id = ?`;
+        db.query(sql, [delRolAns.rolId], (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} row(s) successfully deleted!`);
+            mainMenu();
+        });
+    })
+    .catch(err => {
+        console.error(err);
+    });
+}
+
+delEmp = () => {
+    const employees = [];
+
+    db.query('SELECT * FROM employee', (err, res) => {
+        if (err) throw err;
+
+        res.forEach(({ first_name, last_name, id }) => {
+            let empObj = {
+                name: first_name + " " + last_name,
+                value: id
+            }
+            employees.push(empObj);
+        })
+    });
+
+    inquier.prompt([
+        {
+            type: 'list',
+            name: 'depId',
+            message: 'Which department would you like to delete?',
+            choices: departments
+        }
+    ])
+    .then(delDepAns => {
+        const sql = `DELETE FROM department WHERE id = ?`;
+        db.query(sql, [delDepAns.depId], (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} row(s) successfully deleted!`);
+            mainMenu();
+        });
+    })
+    .catch(err => {
+        console.error(err);
+    });
+}
 
 viewBud = () => {}
