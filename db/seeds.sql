@@ -22,7 +22,7 @@ VALUES
 ('Lou', 'Reed', 1, null),
 ('Cleo', 'Moore', 4, null),
 ('Bob', 'Loblaw', 6, null),
-('Tom', 'Colicchio', 8, null)
+('Tom', 'Colicchio', 8, null),
 ('Steve', 'Miller', 2, 1),
 ('Debbie', 'Harry', 2, 1),
 ('Marky', 'Mark', 3, 1),

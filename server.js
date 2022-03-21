@@ -35,7 +35,7 @@ const mainMenu = () => {
     .then((menuAnswers) => {
         switch (menuAnswers.menu) {
             case 'View all departments':
-                viewAll('EMPLOYEE');
+                viewAll('DEPARTMENT');
                 break;
             case 'View all roles':
                 viewAll('ROLE');
@@ -73,7 +73,7 @@ const mainMenu = () => {
             case 'View department budgets':
                 viewBud();
                 break;
-            case 'Do nothing':
+            case 'Exit':
                 db.end()
         };
     })
@@ -82,3 +82,31 @@ const mainMenu = () => {
     });
 };
 
+const viewAll = (table) => {
+    let sql;
+    if (table === 'DEPARTMENT') {
+        sql = `SELECT department.id AS id, department.name AS department FROM department`;
+    } else if (table === 'ROLE') {
+        sql = `SELECT role.id, role.title, department.name AS department
+                FROM role
+                INNER JOIN department ON role.department_id = department.id`;
+    } else if (table === 'EMPLOYEE') {
+        sql = `SELECT employee.id, 
+                employee.first_name, 
+                employee.last_name, 
+                role.title, 
+                department.name AS department,
+                role.salary, 
+                CONCAT (manager.first_name, " ", manager.last_name) AS manager
+                FROM employee
+                LEFT JOIN role ON employee.role_id = role.id
+                LEFT JOIN department ON role.department_id = department.id
+                LEFT JOIN employee manager ON employee.manager_id = manager.id`;
+    }
+    db.query(sql, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+    
+        mainMenu();
+    });
+};
