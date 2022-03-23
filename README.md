@@ -9,7 +9,6 @@ Workforce Insight is an employee tracker application that allows business to cre
 * [Usage](#usage)
 * [License](#license)
 * [Contributing](#contributing)
-* [Tests](#tests)
 * [Questions](#questions)
 
 ## Installation 
@@ -27,16 +26,13 @@ To set up the database:
 
 ## Usage 
 Run `npm start` in your command line and select the from the displayed prompts.
-You can also view a video walkthrough [here]().
+You can also view a video walkthrough [here](https://youtu.be/Vv80hR2HvZU).
 
 ## License 
 To read the ISC license click [here](https://opensource.org/licenses/ISC)
 
 ## Contributing 
 Please read the [installation](#installation) section.
-
-## Tests
-Run `npm test` in your command line.
 
 ## Questions
 If you have any questions please contact email me [here](mailto:nate.granzow@gmail.com). You can also view more of my projects [here](https://github.com/ngranzow/).
