@@ -171,7 +171,7 @@ addRol = () => {
             name: 'newSalary',
             message: 'What is the salary of the new role?',
             validate: newSalary => {
-                if (!isNaN(newSalary)) {
+                if (isNaN(newSalary)) {
                     console.log(' Please enter the salary.');
                     return false;
                 } else {
@@ -288,52 +288,53 @@ upEmp = () => {
     db.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
         
+        
         res.forEach(({ first_name, last_name, id }) => {
             employees.push({
                 name: first_name + " " + last_name,
                 value: id
             });
         });
-    });
-    
-    db.query('SELECT * FROM role', (err, res) => {
-        if (err) throw err;
         
-        res.forEach(({ title, id }) => {
-            roles.push({
-                name: title,
-                value: id
+        db.query('SELECT * FROM role', (err, res) => {
+            if (err) throw err;
+            
+            res.forEach(({ title, id }) => {
+                roles.push({
+                    name: title,
+                    value: id
+                });
+            });
+
+            inquier.prompt([
+                {
+                  type: 'list',
+                  name: 'id',
+                  message: 'Whose role would you like to update?',
+                  choices: employees
+                },
+                {
+                  type: 'list',
+                  name: 'role_id',
+                  message: 'What is the employee\'s new role?',
+                  choices: roles
+                }
+            ])
+            .then(upRoleAns => {
+                const params = [upRoleAns.role_id, upRoleAns.id]
+                const sql = `UPDATE employee SET role_id = ? WHERE id = ?`;
+        
+                db.query(sql, params, (err, res) => {
+                    if (err) throw err;
+                    console.log(`Updated employee\'s role!`)
+        
+                    viewAll('EMPLOYEE');
+                })
+            })
+            .catch(err => {
+                console.error(err);
             });
         });
-    });
-
-    inquier.prompt([
-        {
-          type: 'list',
-          name: 'id',
-          message: 'Whose role would you like to update?',
-          choices: employees
-        },
-        {
-          type: 'list',
-          name: 'role_id',
-          message: 'What is the employee\'s new role?',
-          choices: roles
-        }
-    ])
-    .then(upRoleAns => {
-        const params = [upRoleAns.role_id, upRoleAns.id]
-        const sql = `UPDATE employee SET role_id = '?'  WHERE 'id' = '?'`;
-
-        db.query(sql, params, (err, res) => {
-            if (err) throw err;
-            console.log(`Updated employee\'s role!`)
-
-            viewAll('EMPLOYEE');
-        })
-    })
-    .catch(err => {
-        console.error(err);
     });
 }
 
@@ -362,50 +363,71 @@ upMan = () => {
                 value: id
             });
         });
-    });
 
-    inquier.prompt([
-        {
-          type: 'list',
-          name: 'empId',
-          message: 'Whose manager would you like to update?',
-          choices: employees
-        },
-        {
-          type: 'list',
-          name: 'manId',
-          message: 'Who is the employee\'s new manager?',
-          choices: manager
-        }
-    ])
-    .then(upRoleAns => {
-        const params = [upRoleAns.manId, upRoleAns.empId]
-        const sql = `UPDATE employee SET manager_id = '?'  WHERE 'id' = '?'`;
-
-        db.query(sql, params, (err, res) => {
-            if (err) throw err;
-            console.log(`Updated employee\'s role!`)
-
-            viewAll('EMPLOYEE');
+        inquier.prompt([
+            {
+              type: 'list',
+              name: 'empId',
+              message: 'Whose manager would you like to update?',
+              choices: employees
+            },
+            {
+              type: 'list',
+              name: 'manId',
+              message: 'Who is the employee\'s new manager?',
+              choices: manager
+            }
+        ])
+        .then(upRoleAns => {
+            const params = [upRoleAns.manId, upRoleAns.empId]
+            const sql = `UPDATE employee SET manager_id = ?  WHERE id = ?`;
+    
+            db.query(sql, params, (err, res) => {
+                if (err) throw err;
+                console.log(`Updated employee\'s role!`)
+    
+                viewAll('EMPLOYEE');
+            })
         })
-    })
-    .catch(err => {
-        console.error(err);
+        .catch(err => {
+            console.error(err);
+        });
     });
 }
 
 viewEByD = () => {
-    const sql = `SELECT employee.first_name, 
-                    employee.last_name, 
-                    department.name AS department
-                FROM employee 
-                LEFT JOIN role ON employee.role_id = role.id 
-                LEFT JOIN department ON role.department_id = department.id`;
+    const departments = [];
+    
+    db.query('SELECT * FROM department', (err, res) => {
+        if (err) throw err;
 
-    db.query(sql, (err, rows) => {
-        if (err) throw err; 
-        console.table(rows); 
-        mainMenu();
+        res.forEach(dep => {
+            let depObj = {
+                name: dep.name,
+                value: dep.id
+            }
+            departments.push(depObj);
+        });
+        
+        inquier.prompt([
+            {
+              type: 'list',
+              name: 'depId',
+              message: 'Which departmen\'s employees would you like to view?',
+              choices: departments
+            }
+        ])
+        .then(viewDep => {
+            const params = [viewDep.depId];
+            const sql = `SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id WHERE department_id = ?`;
+            
+            db.query(sql, params, (err, rows) => {
+                if (err) throw err;
+                console.table(rows);
+
+                mainMenu();
+            })
+        })
     });          
 }
 
@@ -422,26 +444,26 @@ delDep = () => {
             }
             departments.push(depObj);
         })
-    });
 
-    inquier.prompt([
-        {
-            type: 'list',
-            name: 'depId',
-            message: 'Which department would you like to delete?',
-            choices: departments
-        }
-    ])
-    .then(delDepAns => {
-        const sql = `DELETE FROM department WHERE id = ?`;
-        db.query(sql, [delDepAns.depId], (err, res) => {
-            if (err) throw err;
-            console.log(`${res.affectedRows} row(s) successfully deleted!`);
-            mainMenu();
+        inquier.prompt([
+            {
+                type: 'list',
+                name: 'depId',
+                message: 'Which department would you like to delete?',
+                choices: departments
+            }
+        ])
+        .then(delDepAns => {
+            const sql = `DELETE FROM department WHERE id = ?`;
+            db.query(sql, [delDepAns.depId], (err, res) => {
+                if (err) throw err;
+                console.log(`${res.affectedRows} row(s) successfully deleted!`);
+                mainMenu();
+            });
+        })
+        .catch(err => {
+            console.error(err);
         });
-    })
-    .catch(err => {
-        console.error(err);
     });
 }
 
@@ -458,26 +480,26 @@ delRol = () => {
             }
             roles.push(rolObj);
         })
-    });
 
-    inquier.prompt([
-        {
-            type: 'list',
-            name: 'rolId',
-            message: 'Which role would you like to delete?',
-            choices: roles
-        }
-    ])
-    .then(delRolAns => {
-        const sql = `DELETE FROM role WHERE id = ?`;
-        db.query(sql, [delRolAns.rolId], (err, res) => {
-            if (err) throw err;
-            console.log(`${res.affectedRows} row(s) successfully deleted!`);
-            mainMenu();
+        inquier.prompt([
+            {
+                type: 'list',
+                name: 'rolId',
+                message: 'Which role would you like to delete?',
+                choices: roles
+            }
+        ])
+        .then(delRolAns => {
+            const sql = `DELETE FROM role WHERE id = ?`;
+            db.query(sql, [delRolAns.rolId], (err, res) => {
+                if (err) throw err;
+                console.log(`${res.affectedRows} row(s) successfully deleted!`);
+                mainMenu();
+            });
+        })
+        .catch(err => {
+            console.error(err);
         });
-    })
-    .catch(err => {
-        console.error(err);
     });
 }
 
@@ -494,26 +516,26 @@ delEmp = () => {
             }
             employees.push(empObj);
         })
-    });
 
-    inquier.prompt([
-        {
-            type: 'list',
-            name: 'depId',
-            message: 'Which department would you like to delete?',
-            choices: departments
-        }
-    ])
-    .then(delDepAns => {
-        const sql = `DELETE FROM department WHERE id = ?`;
-        db.query(sql, [delDepAns.depId], (err, res) => {
-            if (err) throw err;
-            console.log(`${res.affectedRows} row(s) successfully deleted!`);
-            mainMenu();
+        inquier.prompt([
+            {
+                type: 'list',
+                name: 'depId',
+                message: 'Which department would you like to delete?',
+                choices: departments
+            }
+        ])
+        .then(delDepAns => {
+            const sql = `DELETE FROM department WHERE id = ?`;
+            db.query(sql, [delDepAns.depId], (err, res) => {
+                if (err) throw err;
+                console.log(`${res.affectedRows} row(s) successfully deleted!`);
+                mainMenu();
+            });
+        })
+        .catch(err => {
+            console.error(err);
         });
-    })
-    .catch(err => {
-        console.error(err);
     });
 }
 
@@ -531,30 +553,30 @@ viewBud = () => {
                 }
             );
         });
-    });
 
-    inquier.prompt([
-        {
-            type: 'list',
-            name: 'depId',
-            message: 'Which department\'s budget would you like to see?',
-            choices: departments
-        }
-    ])
-    .then(budAns => {
-        const query = `SELECT department.name, SUM(salary) AS budget FROM
-                        employee LEFT JOIN role
-                        ON employee.role_id = role.id
-                        LEFT JOIN department
-                        ON role.department_id = department.id
-                        WHERE department.id = ?`;
-        db.query(query, [budAns.id], (err, res) => {
-            if (err) throw err;
-                console.table(res);
-            mainMenu();
+        inquier.prompt([
+            {
+                type: 'list',
+                name: 'depId',
+                message: 'Which department\'s budget would you like to see?',
+                choices: departments
+            }
+        ])
+        .then(budAns => {
+            const query = `SELECT department.name, SUM(salary) AS budget FROM
+                            employee LEFT JOIN role
+                            ON employee.role_id = role.id
+                            LEFT JOIN department
+                            ON role.department_id = department.id
+                            WHERE department.id = ?`;
+            db.query(query, [budAns.id], (err, res) => {
+                if (err) throw err;
+                    console.table(res);
+                mainMenu();
+            });
+        })
+        .catch(err => {
+            console.error(err);
         });
-    })
-    .catch(err => {
-        console.error(err);
     });
 };
