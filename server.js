@@ -432,75 +432,105 @@ viewEByD = () => {
 }
 
 delDep = () => {
-    const departments = [];
+    inquier.prompt([
+        {
+            type: 'list',
+            name: 'warning',
+            message: 'WARNING!!! By deleting a DEPARTMENT you will also delete all associated ROLES and EMPLOYEES! Do you want to continue?',
+            choices: ['NO', 'YES']
+        }
+    ])
+    .then(answer => {
+        if(answer.warning === 'NO') {
+            mainMenu();
+        } else {
+            const departments = [];
 
-    db.query('SELECT * FROM department', (err, res) => {
-        if (err) throw err;
-
-        res.forEach(dep => {
-            let depObj = {
-                name: dep.name,
-                value: dep.id
-            }
-            departments.push(depObj);
-        })
-
-        inquier.prompt([
-            {
-                type: 'list',
-                name: 'depId',
-                message: 'Which department would you like to delete?',
-                choices: departments
-            }
-        ])
-        .then(delDepAns => {
-            const sql = `DELETE FROM department WHERE id = ?`;
-            db.query(sql, [delDepAns.depId], (err, res) => {
+            db.query('SELECT * FROM department', (err, res) => {
                 if (err) throw err;
-                console.log(`${res.affectedRows} row(s) successfully deleted!`);
-                mainMenu();
+
+                res.forEach(dep => {
+                    let depObj = {
+                        name: dep.name,
+                        value: dep.id
+                    }
+                    departments.push(depObj);
+                })
+
+                inquier.prompt([
+                    {
+                        type: 'list',
+                        name: 'depId',
+                        message: 'Which department would you like to delete?',
+                        choices: departments
+                    }
+                ])
+                .then(delDepAns => {
+                    const sql = `DELETE FROM department WHERE id = ?`;
+
+                    db.query(sql, [delDepAns.depId], (err, res) => {
+                        if (err) throw err;
+                
+                        viewAll('DEPARTMENT');
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                });
             });
-        })
-        .catch(err => {
-            console.error(err);
-        });
-    });
+        }
+    })
 }
 
 delRol = () => {
-    const roles = [];
+    inquier.prompt([
+        {
+            type: 'list',
+            name: 'warning',
+            message: 'WARNING!!! By deleting a ROLE you will also delete all associated EMPLOYEES! Do you want to continue?',
+            choices: ['NO', 'YES']
+        }
+    ])
+    .then(answer => {
+        if(answer.warning === 'NO') {
+            mainMenu();
+        } else {
+            const roles = [];
 
-    db.query('SELECT * FROM role', (err, res) => {
-        if (err) throw err;
-
-        res.forEach(({ title, id }) => {
-            let rolObj = {
-                name: title,
-                value: id
-            }
-            roles.push(rolObj);
-        })
-
-        inquier.prompt([
-            {
-                type: 'list',
-                name: 'rolId',
-                message: 'Which role would you like to delete?',
-                choices: roles
-            }
-        ])
-        .then(delRolAns => {
-            const sql = `DELETE FROM role WHERE id = ?`;
-            db.query(sql, [delRolAns.rolId], (err, res) => {
+            db.query('SELECT * FROM role', (err, res) => {
                 if (err) throw err;
-                console.log(`${res.affectedRows} row(s) successfully deleted!`);
-                mainMenu();
+
+                res.forEach(({ title, id }) => {
+                    let rolObj = {
+                        name: title,
+                        value: id
+                    }
+                    roles.push(rolObj);
+                })
+
+                inquier.prompt([
+                    {
+                        type: 'list',
+                        name: 'rolId',
+                        message: 'Which role would you like to delete?',
+                        choices: roles
+                    }
+                ])
+                .then(delRolAns => {
+                    const sql = `DELETE FROM role WHERE id = ?`;
+
+                    db.query(sql, [delRolAns.rolId], (err, res) => {
+                        if (err) throw err;
+                
+                        viewAll('ROLE');
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                });
             });
-        })
-        .catch(err => {
-            console.error(err);
-        });
-    });
+        }
+    })
 }
 
 delEmp = () => {
@@ -520,17 +550,18 @@ delEmp = () => {
         inquier.prompt([
             {
                 type: 'list',
-                name: 'depId',
-                message: 'Which department would you like to delete?',
-                choices: departments
+                name: 'empId',
+                message: 'Which employee would you like to delete?',
+                choices: employees
             }
         ])
-        .then(delDepAns => {
-            const sql = `DELETE FROM department WHERE id = ?`;
-            db.query(sql, [delDepAns.depId], (err, res) => {
+        .then(delEmpAns => {
+            const sql = `DELETE FROM employee WHERE id = ?`;
+
+            db.query(sql, [delEmpAns.empId], (err, res) => {
                 if (err) throw err;
-                console.log(`${res.affectedRows} row(s) successfully deleted!`);
-                mainMenu();
+
+                viewAll('EMPLOYEE');
             });
         })
         .catch(err => {
