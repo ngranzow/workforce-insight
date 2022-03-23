@@ -600,7 +600,7 @@ viewBud = () => {
                             LEFT JOIN department
                             ON role.department_id = department.id
                             WHERE department.id = ?`;
-            db.query(query, [budAns.id], (err, res) => {
+            db.query(query, [budAns.depId], (err, res) => {
                 if (err) throw err;
                     console.table(res);
                 mainMenu();
