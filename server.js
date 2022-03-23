@@ -4,12 +4,14 @@ const inquier = require('inquirer');
 const cTable = require('console.table');
 const db = require('./db/connection');
 
+// connects to the database and then starts mainMenu function
 db.connect (err => {
     if (err) throw err;
     console.log('Database connected.');
     mainMenu();
 });
 
+// function that runs initial prompt
 const mainMenu = () => {
     inquier.prompt([
         {
@@ -33,6 +35,7 @@ const mainMenu = () => {
         }
     ])
     .then((menuAnswers) => {
+        // call functions from what the user selected
         switch (menuAnswers.menu) {
             case 'View all departments':
                 viewAll('DEPARTMENT');
@@ -82,6 +85,7 @@ const mainMenu = () => {
     });
 };
 
+// function to view all departments, roles, OR employees
 const viewAll = (table) => {
     let sql;
     if (table === 'DEPARTMENT') {
@@ -103,14 +107,18 @@ const viewAll = (table) => {
                 LEFT JOIN department ON role.department_id = department.id
                 LEFT JOIN employee manager ON employee.manager_id = manager.id`;
     }
+
+    // query that runs one of the sql input from the if statements
     db.query(sql, (err, res) => {
         if (err) throw err;
         console.table(res);
     
+        // returns to beginning function
         mainMenu();
     });
 };
 
+// function to add department
 addDep = () => {
     inquier.prompt([
         {
@@ -129,17 +137,23 @@ addDep = () => {
     ])
     .then(depAnswer => {
         const sql = `INSERT INTO department (name) VALUES (?)`;
+
+        // query that adds a department based on user input
         db.query(sql, [depAnswer.depName], (err, res) => {
             if (err) throw err;
             console.log(`Added ${depAnswer.depName} to departments!`);
 
+            // shows department table
             viewAll('DEPARTMENT');
         });
     });
 };
 
+// function to add a role
 addRol = () => {
     const roles = []
+
+    // query that selects all departments
     db.query('SELECT * FROM department', (err, res) => {
         if (err) throw err;
 
@@ -189,15 +203,19 @@ addRol = () => {
     .then(rolAnswer => {
         const params = [rolAnswer.newRole, rolAnswer.newSalary, rolAnswer.roles];
         const sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+
+        // query that adds role based on user input and selection
         db.query(sql, params, (err, res) => {
             if (err) throw err;
             console.log(`Added ${rolAnswer.newRole} to roles!`)
 
+            // shows role table
             viewAll('ROLE');
         });
     });
 };
 
+// function to add an employee
 addEmp = () => {
     const roles = [];
     const employees = [
@@ -207,6 +225,7 @@ addEmp = () => {
         }
     ];
 
+    // query that selects all roles
     db.query('SELECT * FROM role', (err, res) => {
         if (err) throw err;
         
@@ -218,6 +237,7 @@ addEmp = () => {
         });
     });
 
+    // query that selects all employees
     db.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
         
@@ -272,19 +292,24 @@ addEmp = () => {
     .then(empAnswer => {
         const params = [empAnswer.firstName, empAnswer.lastName, empAnswer.roleId, empAnswer.managerId];
         const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`;
+
+        // query that adds employee information based on user input and selections
         db.query(sql, params, (err, res) => {
             if (err) throw err;
             console.log(`Added ${empAnswer.firstName} ${empAnswer.lastName} to employees!`)
 
+            // shows employee table
             viewAll('EMPLOYEE');
         });
     });
 };
 
+// function to update employee's role
 upEmp = () => {
     const employees = [];
     const roles = [];
 
+    // query that selects all employees
     db.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
         
@@ -296,6 +321,7 @@ upEmp = () => {
             });
         });
         
+        // query that selects all roles
         db.query('SELECT * FROM role', (err, res) => {
             if (err) throw err;
             
@@ -324,10 +350,12 @@ upEmp = () => {
                 const params = [upRoleAns.role_id, upRoleAns.id]
                 const sql = `UPDATE employee SET role_id = ? WHERE id = ?`;
         
+                // query that updates an employee's role based on user selected role id and employee id
                 db.query(sql, params, (err, res) => {
                     if (err) throw err;
                     console.log(`Updated employee\'s role!`)
-        
+                    
+                    // shows employee table
                     viewAll('EMPLOYEE');
                 })
             })
@@ -338,8 +366,10 @@ upEmp = () => {
     });
 }
 
+// function to update employee's manager
 upMan = () => {
     const employees = [];
+    // allows user to select null value instead of an employee
     const manager = [
         {
             name: 'None',
@@ -347,6 +377,7 @@ upMan = () => {
         }
     ];
 
+    // query to select all employees
     db.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
         
@@ -378,14 +409,16 @@ upMan = () => {
               choices: manager
             }
         ])
-        .then(upRoleAns => {
-            const params = [upRoleAns.manId, upRoleAns.empId]
+        .then(upManAns => {
+            const params = [upManAns.manId, upManAns.empId]
             const sql = `UPDATE employee SET manager_id = ?  WHERE id = ?`;
     
+            // query to update employee manager based on user selected employee id
             db.query(sql, params, (err, res) => {
                 if (err) throw err;
-                console.log(`Updated employee\'s role!`)
-    
+                console.log(`Updated employee\'s manager!`)
+                
+                // shows emplpoyee table
                 viewAll('EMPLOYEE');
             })
         })
@@ -395,6 +428,7 @@ upMan = () => {
     });
 }
 
+// function to view employees by department
 viewEByD = () => {
     const departments = [];
     
@@ -421,17 +455,23 @@ viewEByD = () => {
             const params = [viewDep.depId];
             const sql = `SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id WHERE department_id = ?`;
             
+            // query to show employees and their roles based on user selected department id
             db.query(sql, params, (err, rows) => {
                 if (err) throw err;
+
+                // shows table of selected department employees
                 console.table(rows);
 
+                // returns to beginning function
                 mainMenu();
             })
         })
     });          
 }
 
+// function to delete department
 delDep = () => {
+    // warning that lets the user know if they delete a department it will delete all assoctiated roles and employees
     inquier.prompt([
         {
             type: 'list',
@@ -446,6 +486,7 @@ delDep = () => {
         } else {
             const departments = [];
 
+            // query to select all departments
             db.query('SELECT * FROM department', (err, res) => {
                 if (err) throw err;
 
@@ -468,9 +509,11 @@ delDep = () => {
                 .then(delDepAns => {
                     const sql = `DELETE FROM department WHERE id = ?`;
 
+                    // query that deletes department based on user selecte department id
                     db.query(sql, [delDepAns.depId], (err, res) => {
                         if (err) throw err;
-                
+
+                        // shows department table
                         viewAll('DEPARTMENT');
                     });
                 })
@@ -482,7 +525,9 @@ delDep = () => {
     })
 }
 
+// function to delete role
 delRol = () => {
+    // warning letter user know if they continue to delete role they will also delete associated employees
     inquier.prompt([
         {
             type: 'list',
@@ -497,6 +542,7 @@ delRol = () => {
         } else {
             const roles = [];
 
+            // query to select all from role
             db.query('SELECT * FROM role', (err, res) => {
                 if (err) throw err;
 
@@ -519,9 +565,11 @@ delRol = () => {
                 .then(delRolAns => {
                     const sql = `DELETE FROM role WHERE id = ?`;
 
+                    // query to delete role based on user selected role id
                     db.query(sql, [delRolAns.rolId], (err, res) => {
                         if (err) throw err;
                 
+                        // shows role table
                         viewAll('ROLE');
                     });
                 })
@@ -533,9 +581,11 @@ delRol = () => {
     })
 }
 
+// function to delete employee
 delEmp = () => {
     const employees = [];
 
+    // query to select all employees
     db.query('SELECT * FROM employee', (err, res) => {
         if (err) throw err;
 
@@ -558,9 +608,11 @@ delEmp = () => {
         .then(delEmpAns => {
             const sql = `DELETE FROM employee WHERE id = ?`;
 
+            // query to delete employee based on user selected employee id
             db.query(sql, [delEmpAns.empId], (err, res) => {
                 if (err) throw err;
 
+                // shows employee table
                 viewAll('EMPLOYEE');
             });
         })
@@ -570,9 +622,11 @@ delEmp = () => {
     });
 }
 
+// function to view budget by department
 viewBud = () => {
     const departments = [];
 
+    // query to select all from department
     db.query("SELECT * FROM department", (err, res) => {
         if (err) throw err;
     
@@ -600,9 +654,15 @@ viewBud = () => {
                             LEFT JOIN department
                             ON role.department_id = department.id
                             WHERE department.id = ?`;
+            
+            // query to create department budget based on user selected department                
             db.query(query, [budAns.depId], (err, res) => {
                 if (err) throw err;
-                    console.table(res);
+
+                // creates budget table
+                console.table(res);
+
+                // returns to beginning function
                 mainMenu();
             });
         })
